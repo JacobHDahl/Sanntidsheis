@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"../config"
 	"../driver/elevio"
 )
 
@@ -101,30 +102,25 @@ func fsm(doorsOpen chan<- int) {
 }
 
 // InternalControl .. Responsible for internal control of a single elevator
-func InternalControl() {
+func InternalControl(drvChan config.DriverChannels) {
 	println("Connecting to server")
 	elevio.Init("localhost:15657", numFloors)
 
 	FsmInit()
-	drvButtons := make(chan elevio.ButtonEvent)
-	drvFloors := make(chan int)
-	drvStop := make(chan bool)
-	doorsOpen := make(chan int)
-	CompletedOrder := make(chan elevio.ButtonEvent, 100)
 
 	drvObstr := make(chan bool)
 	go elevio.PollObstructionSwitch(drvObstr)
 
-	go elevio.PollButtons(drvButtons)
-	go elevio.PollFloorSensor(drvFloors)
-	go elevio.PollStopButton(drvStop)
-	go fsm(doorsOpen)
+	go elevio.PollButtons(drvChan.DrvButtons)
+	go elevio.PollFloorSensor(drvChan.DrvFloors)
+	go elevio.PollStopButton(drvChan.DrvStop)
+	go fsm(drvChan.DoorsOpen)
 	for {
 		select {
-		case floor := <-drvFloors: //Sensor senses a new floor
+		case floor := <-drvChan.DrvFloors: //Sensor senses a new floor
 			//println("updating floor:", floor)
 			FsmUpdateFloor(floor)
-		case drvOrder := <-drvButtons: // a new button is pressed on this elevator
+		case drvOrder := <-drvChan.DrvButtons: // a new button is pressed on this elevator
 			//ch.DelegateOrder <- drvOrder //Delegate this order
 			fmt.Println("New order")
 			fmt.Println(drvOrder)
@@ -132,7 +128,7 @@ func InternalControl() {
 			elevio.SetButtonLamp(drvOrder.Button, drvOrder.Floor, true)
 		/*case ExtOrder := <-ch.TakeExternalOrder:
 		AddOrder(ExtOrder)*/
-		case floor := <-doorsOpen:
+		case floor := <-drvChan.DoorsOpen:
 			order_OutsideUp_Completed := elevio.ButtonEvent{
 				Floor:  floor,
 				Button: elevio.BT_HallUp,
@@ -145,11 +141,11 @@ func InternalControl() {
 				Floor:  floor,
 				Button: elevio.BT_Cab,
 			}
-			CompletedOrder <- order_OutsideUp_Completed
-			CompletedOrder <- order_OutsideDown_Completed
-			CompletedOrder <- order_Inside_Completed
+			drvChan.CompletedOrder <- order_OutsideUp_Completed
+			drvChan.CompletedOrder <- order_OutsideDown_Completed
+			drvChan.CompletedOrder <- order_Inside_Completed
 
-		case <-drvStop:
+		case <-drvChan.DrvStop:
 			elevio.SetMotorDirection(elevio.MD_Stop)
 			time.Sleep(3 * time.Second)
 
