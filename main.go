@@ -7,13 +7,16 @@ import (
 	"./FSM"
 	"./config"
 	"./driver/elevio"
-	"./network/peers"
+	"./ordermanager"
 )
 
 const numFloors = 4
+const numButtons = 3
+const numElevs = 3
 
 func main() {
 	elevPort_p := flag.String("elev_port", "15657", "The port of the elevator to connect to (for sim purposes)")
+	//får noen ganger out of index error i ordersInFloor funksjonen når forskjellige porter brukes!!!??!
 
 	flag.Parse()
 
@@ -34,9 +37,15 @@ func main() {
 		DrvObstr:       make(chan bool),
 	}
 
-	dummyString := "fuck u bitch"
+	orderChannels := config.OrderChannels{
+		ExtOrder:       make(chan elevio.ButtonEvent),
+		DelegateOrder:  make(chan elevio.ButtonEvent),
+		OthersLocation: make(chan [numElevs]int),
+	}
+
+	/*dummyString := "fuck u bitch"
 	transmitEnable := make(chan bool)
-	go peers.Transmitter(22349, dummyString, transmitEnable)
+	go peers.Transmitter(22349, dummyString, transmitEnable)*/
 
 	go elevio.PollObstructionSwitch(driverChannels.DrvObstr)
 	go elevio.PollButtons(driverChannels.DrvButtons)
@@ -44,6 +53,8 @@ func main() {
 	go elevio.PollStopButton(driverChannels.DrvStop)
 	go FSM.Fsm(driverChannels.DoorsOpen)
 
-	FSM.InternalControl(driverChannels)
+	go ordermanager.OrderMan(orderChannels)
+
+	FSM.InternalControl(driverChannels, orderChannels)
 
 }

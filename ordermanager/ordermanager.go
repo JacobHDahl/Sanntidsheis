@@ -1,9 +1,15 @@
 package ordermanager
 
 import (
-	"project.com/driver/elevio"
+	"fmt"
+
+	"../config"
+	"../driver/elevio"
 )
 
+const numElev = 3
+
+/*
 type orderMess struct {
 	Floor     int
 	Direction int
@@ -28,6 +34,26 @@ func ordermanager() {
 		case order = <-orderMessage:
 		}
 	}
+}*/
+
+func costFunc(incomingOrder elevio.ButtonEvent, othersLocation [numElev]int) int {
+	fmt.Println("inside ", incomingOrder, othersLocation)
+	return 1
+}
+
+func OrderMan(orderChan config.OrderChannels) {
+
+	for {
+		select {
+		case incomingOrder := <-orderChan.DelegateOrder:
+			//othersLocation := <-orderChan.OthersLocation
+			//selectedElev := costFunc(incomingOrder, othersLocation)
+			fmt.Println("selected elev: ", 1)
+			orderChan.ExtOrder <- incomingOrder
+
+		}
+	}
+
 }
 
 //Start groutine to handle order

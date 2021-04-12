@@ -102,7 +102,7 @@ func Fsm(doorsOpen chan<- int) {
 }
 
 // InternalControl .. Responsible for internal control of a single elevator
-func InternalControl(drvChan config.DriverChannels) {
+func InternalControl(drvChan config.DriverChannels, orderChan config.OrderChannels) {
 
 	FsmInit()
 	for {
@@ -111,13 +111,17 @@ func InternalControl(drvChan config.DriverChannels) {
 			//println("updating floor:", floor)
 			FsmUpdateFloor(floor)
 		case drvOrder := <-drvChan.DrvButtons: // a new button is pressed on this elevator
-			//ch.DelegateOrder <- drvOrder //Delegate this order
-			fmt.Println("New order")
+			orderChan.DelegateOrder <- drvOrder //Delegate this order
+			fmt.Println("New order delegated")
 			fmt.Println(drvOrder)
-			elevator.Queue[drvOrder.Floor][int(drvOrder.Button)] = true
-			elevio.SetButtonLamp(drvOrder.Button, drvOrder.Floor, true)
-		/*case ExtOrder := <-ch.TakeExternalOrder:
-		AddOrder(ExtOrder)*/
+			/*
+				elevator.Queue[drvOrder.Floor][int(drvOrder.Button)] = true
+				elevio.SetButtonLamp(drvOrder.Button, drvOrder.Floor, true)*/
+		case ExtOrder := <-orderChan.ExtOrder:
+			//AddOrder(ExtOrder)
+			fmt.Println("New order externally")
+			elevator.Queue[ExtOrder.Floor][int(ExtOrder.Button)] = true
+			elevio.SetButtonLamp(ExtOrder.Button, ExtOrder.Floor, true)
 		case floor := <-drvChan.DoorsOpen:
 			order_OutsideUp_Completed := elevio.ButtonEvent{
 				Floor:  floor,

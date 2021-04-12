@@ -61,9 +61,9 @@ func ordersInFloor(elevator Elev) bool {
 		if elevator.Queue[elevator.Floor][btn] {
 			if elevator.Dir == UP && btn == 0 { //makes sure the elevator only stops of the order is in the same direction
 				return true
-			} else if elevator.Dir == DOWN && btn == 1 {
+			} else if elevator.Dir == DOWN && btn == 1 { //makes sure the elevator only stops of the order is in the same direction
 				return true
-			} else if btn == 2 {
+			} else if btn == 2 { //cab orders will always stop no matter which direction
 				return true
 			} else if elevator.Floor == 0 || elevator.Floor == (numFloors-1) { //takes care of the edge cases
 				return true
