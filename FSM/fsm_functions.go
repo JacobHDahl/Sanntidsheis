@@ -57,9 +57,20 @@ func ordersBelow(elevator Elev) bool {
 }
 
 func ordersInFloor(elevator Elev) bool {
-	for i := 0; i < 3; i++ {
-		if elevator.Queue[elevator.Floor][i] {
-			return true
+	for btn := 0; btn < numButtons; btn++ {
+		if elevator.Queue[elevator.Floor][btn] {
+			if elevator.Dir == UP && btn == 0 { //makes sure the elevator only stops of the order is in the same direction
+				return true
+			} else if elevator.Dir == DOWN && btn == 1 {
+				return true
+			} else if btn == 2 {
+				return true
+			} else if elevator.Floor == 0 || elevator.Floor == (numFloors-1) { //takes care of the edge cases
+				return true
+			} else {
+				return false
+			}
+
 		}
 	}
 	return false

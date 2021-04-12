@@ -112,8 +112,8 @@ func InternalControl() {
 	doorsOpen := make(chan int)
 	CompletedOrder := make(chan elevio.ButtonEvent, 100)
 
-	//drv_obstr := make(chan bool)
-	//go elevio.PollObstructionSwitch(drv_obstr)
+	drvObstr := make(chan bool)
+	go elevio.PollObstructionSwitch(drvObstr)
 
 	go elevio.PollButtons(drvButtons)
 	go elevio.PollFloorSensor(drvFloors)
@@ -152,6 +152,9 @@ func InternalControl() {
 		case <-drvStop:
 			elevio.SetMotorDirection(elevio.MD_Stop)
 			time.Sleep(3 * time.Second)
+
+		case <-drvObstr:
+			elevator.State = DOOR_OPEN
 
 		}
 
