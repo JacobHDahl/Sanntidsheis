@@ -51,7 +51,7 @@ func removeButtonLamps(elevator Elev) {
 	elevio.SetButtonLamp(elevio.BT_HallUp, elevator.Floor, false)
 }
 
-func fsm(doorsOpen chan<- int) {
+func Fsm(doorsOpen chan<- int) {
 	for {
 		switch elevator.State {
 		case IDLE:
@@ -103,18 +103,8 @@ func fsm(doorsOpen chan<- int) {
 
 // InternalControl .. Responsible for internal control of a single elevator
 func InternalControl(drvChan config.DriverChannels) {
-	println("Connecting to server")
-	elevio.Init("localhost:15657", numFloors)
 
 	FsmInit()
-
-	drvObstr := make(chan bool)
-	go elevio.PollObstructionSwitch(drvObstr)
-
-	go elevio.PollButtons(drvChan.DrvButtons)
-	go elevio.PollFloorSensor(drvChan.DrvFloors)
-	go elevio.PollStopButton(drvChan.DrvStop)
-	go fsm(drvChan.DoorsOpen)
 	for {
 		select {
 		case floor := <-drvChan.DrvFloors: //Sensor senses a new floor
@@ -149,7 +139,7 @@ func InternalControl(drvChan config.DriverChannels) {
 			elevio.SetMotorDirection(elevio.MD_Stop)
 			time.Sleep(3 * time.Second)
 
-		case <-drvObstr:
+		case <-drvChan.DrvObstr:
 			elevator.State = DOOR_OPEN
 
 		}

@@ -10,4 +10,5 @@ type DriverChannels struct {
 	DrvStop        chan bool
 	DoorsOpen      chan int
 	CompletedOrder chan elevio.ButtonEvent
+	DrvObstr       chan bool
 }
